@@ -1,0 +1,2249 @@
+Imports System.Data.OleDb
+Imports Microsoft.Office.Interop.Excel
+Imports Microsoft.Office.Interop
+Imports System.IO
+
+Public Class Form1
+    Dim xlApp As Excel.Application
+    Dim xlWb As Excel.Workbook
+    Dim xlWS As Excel.Worksheet
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs)
+
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs)
+
+    End Sub
+
+    Private Sub Label2_Click(sender As Object, e As EventArgs)
+
+    End Sub
+
+    Private Sub Button2_Click_1(sender As Object, e As EventArgs) Handles btnLoadFile.Click
+        Try
+            Dim fd As OpenFileDialog = New OpenFileDialog()
+            Dim strFileName As String
+            lvChannels.Items.Clear()
+            fd.Title = "Open File Dialog"
+            fd.InitialDirectory = ""
+            fd.Filter = "Microsoft Database Files | *.mdb"
+            fd.FilterIndex = 2
+            fd.RestoreDirectory = True
+
+            If fd.ShowDialog() = DialogResult.OK Then
+                strFileName = fd.FileName
+                Label1.Text = strFileName
+                Label1.ForeColor = Color.Green
+
+            End If
+
+            Select Case True
+                Case Label1.Text.Contains("Basement")
+                    cboGlobalFloor.SelectedIndex = 0
+                Case Label1.Text.Contains("1")
+                    cboGlobalFloor.SelectedIndex = 1
+                Case Label1.Text.Contains("2")
+                    cboGlobalFloor.SelectedIndex = 2
+                Case Label1.Text.Contains("3")
+                    cboGlobalFloor.SelectedIndex = 3
+                Case Label1.Text.Contains("4")
+                    cboGlobalFloor.SelectedIndex = 4
+                Case Label1.Text.Contains("5")
+                    cboGlobalFloor.SelectedIndex = 5
+                Case Label1.Text.Contains("6")
+                    cboGlobalFloor.SelectedIndex = 6
+                Case Label1.Text.Contains("7")
+                    cboGlobalFloor.SelectedIndex = 7
+                Case Label1.Text.Contains("8")
+                    cboGlobalFloor.SelectedIndex = 8
+                Case Label1.Text.Contains("9")
+                    cboGlobalFloor.SelectedIndex = 9
+                Case Label1.Text.Contains("8")
+                    cboGlobalFloor.SelectedIndex = 10
+                Case Label1.Text.Contains("9")
+                    cboGlobalFloor.SelectedIndex = 11
+            End Select
+            btnGlobalSet_Click(btnGlobalSet, New System.EventArgs())
+            lvChannels.Items.Clear()
+            lbLteChannel.Items.Clear()
+            lbWcdmaChannel.Items.Clear()
+            lbCdmaChannel.Items.Clear()
+
+            cboLv1Channel.Items.Clear()
+            cboLv2Channel.Items.Clear()
+            cboLv3Channel.Items.Clear()
+            cboLv4Channel.Items.Clear()
+
+            cmdPullChannels_Click(Nothing, Nothing)
+
+
+            'Button1_Click_1(Button1, New System.EventArgs())
+        Catch ex As Exception
+            MsgBox("Can't complete operation" & vbCrLf & ex.Message)
+        End Try
+
+    End Sub
+
+    Private Sub Button1_Click_1(sender As Object, e As EventArgs) Handles Button1.Click
+        lv1.Items.Clear()
+        lv2.Items.Clear()
+        lv3.Items.Clear()
+        lv4.Items.Clear()
+        Dim incrementCounter As Integer = 0
+
+        If chkLv1.Checked = True Then
+            incrementCounter = 1
+        End If
+
+        If chkLv2.Checked = True Then
+            incrementCounter = incrementCounter + 1
+        End If
+
+        If chkLv3.Checked = True Then
+            incrementCounter = incrementCounter + 1
+        End If
+
+        If chkLv4.Checked = True Then
+            incrementCounter = incrementCounter + 1
+        End If
+
+        'Progress bar class
+        Dim pb As New Progress_Bar
+        Dim increment As Decimal = 100 / (incrementCounter * 3)
+
+        pb.WindowTitle = "Robbing from Windcatcher..."
+        pb.CallerThreadSet = Threading.Thread.CurrentThread
+        pb.OverallProgressValue = 1
+
+        If chkLv1.Checked = True Then
+            pb.OverallProgressText = "Pulling Vzw RSRP..."
+            btnVzwSS_Click(btnVzwSS, New System.EventArgs())
+            pb.OverallProgressValue = pb.OverallProgressValue + increment
+
+            pb.OverallProgressText = "Pulling Vzw CINR..."
+            btnVzwSQ_Click(btnVzwSQ, New System.EventArgs())
+            pb.OverallProgressValue = pb.OverallProgressValue + increment
+
+            pb.OverallProgressText = "Pulling Vzw PCI..."
+            btnVzwCID_Click(btnVzwCID, New System.EventArgs())
+            pb.OverallProgressValue = pb.OverallProgressValue + increment
+
+            For x As Integer = 0 To lb1SS.Items.Count - 1
+                Dim lvi As New ListViewItem
+                lvi.Text = lb1SS.Items(x).ToString
+                lvi.SubItems.Add(lb1SQ.Items(x).ToString)
+                lvi.SubItems.Add(lb1CID.Items(x).ToString)
+                lv1.Items.Add(lvi)
+            Next
+            lv1.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent)
+        End If
+
+        If chkLv2.Checked = True Then
+            pb.OverallProgressText = "Pulling ATT RSRP..."
+            btnAttSS_Click(btnAttSS, New System.EventArgs())
+            pb.OverallProgressValue = pb.OverallProgressValue + increment
+
+            pb.OverallProgressText = "Pulling ATT RSRQ..."
+            btnAttSQ_Click(btnAttSQ, New System.EventArgs())
+            pb.OverallProgressValue = pb.OverallProgressValue + increment
+
+            pb.OverallProgressText = "Pulling ATT PCI..."
+            btnAttCID_Click(btnAttCID, New System.EventArgs())
+            pb.OverallProgressValue = pb.OverallProgressValue + increment
+
+            For x As Integer = 0 To lb2SS.Items.Count - 1
+                Dim lvi2 As New ListViewItem
+                lvi2.Text = lb2SS.Items(x).ToString
+                lvi2.SubItems.Add(lb2SQ.Items(x).ToString)
+                lvi2.SubItems.Add(lb2CID.Items(x).ToString)
+                lv2.Items.Add(lvi2)
+            Next
+
+            lv2.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent)
+        End If
+
+        If chkLv3.Checked = True Then
+            pb.OverallProgressText = "Pulling UMTS Low Band Signal Strength..."
+            btnUmtsSS_Click(btnUmtsSS, New System.EventArgs())
+            pb.OverallProgressValue = pb.OverallProgressValue + increment
+
+            pb.OverallProgressText = "Pulling UMTS Low Band Signal Quality..."
+            UmtsSQ_Click(UmtsSQ, New System.EventArgs())
+            pb.OverallProgressValue = pb.OverallProgressValue + increment
+
+            pb.OverallProgressText = "Pulling UMTS Low Band Signal Quality..."
+            UmtsCID_Click(UmtsCID, New System.EventArgs())
+            pb.OverallProgressValue = pb.OverallProgressValue + increment
+
+            For x As Integer = 0 To lb3SS.Items.Count - 1
+                Dim lvi3 As New ListViewItem
+                lvi3.Text = lb3SS.Items(x).ToString
+                lvi3.SubItems.Add(lb3SQ.Items(x).ToString)
+                lvi3.SubItems.Add(lb3CID.Items(x).ToString)
+                lv3.Items.Add(lvi3)
+            Next
+            lv3.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent)
+
+        End If
+
+        If chkLv4.Checked = True Then
+            pb.OverallProgressText = "Pulling UMTS High Band Signal Strength..."
+            UmtsSS2_Click(UmtsSS2, New System.EventArgs())
+            pb.OverallProgressValue = pb.OverallProgressValue + increment
+
+            pb.OverallProgressText = "Pulling UMTS High Band Signal Quality..."
+            UmtsSQ2_Click(UmtsSQ2, New System.EventArgs())
+            pb.OverallProgressValue = pb.OverallProgressValue + increment
+
+            pb.OverallProgressText = "Pulling UMTS Low Band Signal Quality..."
+            UmtsCID2_Click(UmtsCID2, New System.EventArgs())
+            pb.OverallProgressValue = pb.OverallProgressValue + increment
+
+            For x As Integer = 0 To lb4SS.Items.Count - 1
+                Dim lvi4 As New ListViewItem
+                lvi4.Text = lb4SS.Items(x).ToString
+                lvi4.SubItems.Add(lb4SQ.Items(x).ToString)
+                lvi4.SubItems.Add(lb4CID.Items(x).ToString)
+                lv4.Items.Add(lvi4)
+            Next
+            lv4.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent)
+
+        End If
+
+        'MsgBox(lbVzwSS.Items.Count & vbNewLine _
+        '  & lbVzwSQ.Items.Count _
+        '   & lbVzwCID.Items.Count)
+
+        pb.OverallProgressText = "Finalizing...."
+
+        '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+        lblSS1count.Text = lb1SS.Items.Count
+        lblSQ1count.Text = lb1SQ.Items.Count
+        lblCID1count.Text = lb1CID.Items.Count
+        lblSS2count.Text = lb2SS.Items.Count
+        lblSQ2count.Text = lb2SQ.Items.Count
+        lblCID2count.Text = lb2CID.Items.Count
+        lblSS3count.Text = lb3SS.Items.Count
+        lblSQ3count.Text = lb3SQ.Items.Count
+        lblCID3count.Text = lb3CID.Items.Count
+        lblSS4count.Text = lb4SS.Items.Count
+        lblSQ4count.Text = lb4SQ.Items.Count
+        lblCID4count.Text = lb4CID.Items.Count
+
+
+        pb.OverallProgressValue = 100
+        DataGridView1.Rows.Clear()
+    End Sub
+
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Label1.Text = "Load Access Database"
+        Label1.ForeColor = Color.Red
+        Label4.Text = "Load Excel Workbook"
+        Label4.ForeColor = Color.Red
+
+        cboSheetlist1.Items.Add("Choose Your Worksheet")
+        cboSheetlist2.Items.Add("Choose Your Worksheet")
+        cboSheetlist3.Items.Add("Choose Your Worksheet")
+        cboSheetlist4.Items.Add("Choose Your Worksheet")
+        ComboBox3.Items.Add("Choose Your Floor")
+        ComboBox4.Items.Add("Choose Your Floor")
+        cboUMTS1Floor.Items.Add("Choose Your Floor")
+        cboUmts2Floor.Items.Add("Choose Your Floor")
+
+
+        ComboBox3.Items.Add("Basement")
+        ComboBox4.Items.Add("Basement")
+        cboUMTS1Floor.Items.Add("Basement")
+        cboUmts2Floor.Items.Add("Basement")
+        cboGlobalFloor.Items.Add("basement")
+
+        For i As Integer = 1 To 11
+            ComboBox3.Items.Add(i.ToString)
+            ComboBox4.Items.Add(i.ToString)
+            cboUMTS1Floor.Items.Add(i.ToString)
+            cboUmts2Floor.Items.Add(i.ToString)
+            cboGlobalFloor.Items.Add(i.ToString)
+        Next
+
+
+        cboSheetlist1.SelectedIndex = 0
+        cboSheetlist2.SelectedIndex = 0
+        cboSheetlist3.SelectedIndex = 0
+        cboSheetlist4.SelectedIndex = 0
+        ComboBox3.SelectedIndex = 0
+        ComboBox4.SelectedIndex = 0
+        cboUMTS1Floor.SelectedIndex = 0
+        cboUmts2Floor.SelectedIndex = 0
+
+        With cboTechLv1.Items
+            .Add("LTE")
+            .Add("WCDMA")
+            .Add("CDMA")
+            .Add("GSM")
+        End With
+        With cboTechLv2.Items
+            .Add("LTE")
+            .Add("WCDMA")
+            .Add("CDMA")
+            .Add("GSM")
+        End With
+        With cboTechLv3.Items
+            .Add("LTE")
+            .Add("WCDMA")
+            .Add("CDMA")
+            .Add("GSM")
+        End With
+        With cbotechLv4.Items
+            .Add("LTE")
+            .Add("WCDMA")
+            .Add("CDMA")
+            .Add("GSM")
+        End With
+
+
+
+    End Sub
+
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
+
+        Try
+            If cboSheetlist1.Text = "Choose Your Worksheet" Then
+                MsgBox("Select a Worksheet from the VZW dropdown box below")
+            ElseIf cboSheetlist2.Text = "Choose Your Worksheet" Then
+                MsgBox("Select a Worksheet from the ATT dropdown box below")
+            ElseIf ComboBox3.Text = "Choose Your Floor for Verizon" Then
+                MsgBox("Select your Floor")
+            ElseIf ComboBox4.Text = "Choose Your Floor" Then
+                MsgBox("Select Floor for AT&T")
+            Else
+
+
+
+                Dim incrementCounter As Integer = 0
+
+                If chkLv1.Checked = True Then
+                    incrementCounter = 1
+                End If
+
+                If chkLv2.Checked = True Then
+                    incrementCounter = incrementCounter + 1
+                End If
+
+                If chkLv3.Checked = True Then
+                    incrementCounter = incrementCounter + 1
+                End If
+
+                If chkLv4.Checked = True Then
+                    incrementCounter = incrementCounter + 1
+                End If
+
+
+
+                'progress bar class
+                Dim pb As New Progress_Bar
+                Dim increment As Decimal
+                Dim partialIncrement As Decimal
+                increment = 100 / (incrementCounter * 3)
+
+
+                pb.WindowTitle = "Exporting to Excel..."
+                pb.CallerThreadSet = Threading.Thread.CurrentThread
+                pb.OverallProgressText = "Overall Progress..."
+                pb.PartialProgressValue = 1
+
+
+                Dim xlApp As Excel.Application
+                Dim xlWb As Excel.Workbook
+                Dim xlWS As Excel.Worksheet
+                Dim xlCell As Excel.Range
+
+
+                xlApp = New Excel.Application
+                xlApp.Visible = True
+                xlApp.WindowState = Microsoft.Office.Interop.Excel.XlWindowState.xlMinimized
+                xlWb = xlApp.Workbooks.Open(Label4.Text)
+                xlWS = xlWb.Worksheets(cboSheetlist1.Text)
+
+                'Call Button4_Click(xlWS)
+                Dim ssStart As String = ""
+                Dim cStart As String = ""
+                Dim IDstart As String = ""
+
+                Dim cVStop As Integer = lb1SQ.Items.Count + 2
+                Dim cAStop As Integer = lb2SQ.Items.Count + 2
+
+
+
+                With xlWS
+
+                    Select Case ComboBox3.Text
+                        Case "Basement"
+                            ssStart = "B"
+                            cStart = "C"
+                            IDstart = "D"
+                        Case "1"
+                            ssStart = "F"
+                            cStart = "g"
+                            IDstart = "h"
+                        Case "2"
+                            ssStart = "j"
+                            cStart = "k"
+                            IDstart = "l"
+                        Case "3"
+                            ssStart = "n"
+                            cStart = "o"
+                            IDstart = "p"
+                        Case "4"
+                            ssStart = "r"
+                            cStart = "s"
+                            IDstart = "t"
+                        Case "5"
+                            ssStart = "v"
+                            cStart = "w"
+                            IDstart = "x"
+                        Case "6"
+                            ssStart = "z"
+                            cStart = "aa"
+                            IDstart = "ab"
+                        Case "7"
+                            ssStart = "ad"
+                            cStart = "AE"
+                            IDstart = "af"
+                        Case "8"
+                            ssStart = "ah"
+                            cStart = "ai"
+                            IDstart = "aj"
+                        Case "9"
+                            ssStart = "al"
+                            cStart = "am"
+                            IDstart = "an"
+                        Case "10"
+                            ssStart = "ap"
+                            cStart = "aq"
+                            IDstart = "ar"
+                    End Select
+
+
+                    .Range(ssStart & "2:" & ssStart & "1999").Clear()
+                    .Range(cStart & "2:" & cStart & "1999").Clear()
+                    .Range(IDstart & "2:" & IDstart & "1999").Clear()
+
+
+                    ' WSP 1 Start
+                    pb.OverallProgressValue = increment
+                    pb.PartialProgressText = "Working on List 1 Signal Strength"
+                    If chkLv1.Checked = True Then
+
+                        Try
+                            partialIncrement = 100 / Convert.ToDecimal(lb1SS.Items.Count)
+                        Catch ex As Exception
+                            MsgBox(ex.Message)
+                        End Try
+
+                        For i As Integer = 0 To lb1SS.Items.Count - 1
+                            Dim vssText As String = lb1SS.Items(i).ToString
+                            .Range(ssStart & i + 2).Value = vssText
+                            pb.PartialProgressValue = partialIncrement * (i + 1)
+                        Next
+
+                        pb.OverallProgressValue = pb.OverallProgressValue + increment
+                        pb.PartialProgressValue = 1
+                        pb.PartialProgressText = "Working on List 1 Signal Quality"
+                        For i As Integer = 0 To lb1SQ.Items.Count - 1
+                            Dim vsqText As String = lb1SQ.Items(i).ToString
+                            .Range(cStart & i + 2).Value = vsqText
+                            pb.PartialProgressValue = partialIncrement * (i + 1)
+                        Next
+
+
+                        pb.OverallProgressValue = pb.OverallProgressValue + increment
+                        pb.PartialProgressValue = 1
+                        pb.PartialProgressText = "Working on List 1 Cell ID"
+                        For i As Integer = 0 To lb1SQ.Items.Count - 1
+                            Dim vidText As String = lb1CID.Items(i).ToString
+                            .Range(IDstart & i + 2).Value = vidText
+                            pb.PartialProgressValue = partialIncrement * (i + 1)
+                        Next
+                    End If
+                End With
+
+
+                'ATT LTE Start
+                If chkLv2.Checked = True Then
+                    xlWS = xlWb.Worksheets(cboSheetlist2.Text)
+                    With xlWS
+
+                        pb.OverallProgressValue = pb.OverallProgressValue + increment
+                        pb.PartialProgressValue = 1
+                        pb.PartialProgressText = "Working on List 2 Signal Strength"
+                        For i As Integer = 0 To lb2SS.Items.Count - 1
+                            Dim assText As String = lb2SS.Items(i).ToString
+                            .Range(ssStart & i + 2).Value = assText
+                            pb.PartialProgressValue = partialIncrement * (i + 1)
+                        Next
+
+                        pb.OverallProgressValue = pb.OverallProgressValue + increment
+                        pb.PartialProgressValue = 1
+                        pb.PartialProgressText = "Working on List 2 Signal Quality "
+                        For i As Integer = 0 To lb2SQ.Items.Count - 1
+                            Dim asqText As String = lb2SQ.Items(i).ToString
+                            .Range(cStart & i + 2).Value = asqText
+                            pb.PartialProgressValue = partialIncrement * (i + 1)
+                        Next
+
+                        pb.OverallProgressValue = pb.OverallProgressValue + increment / 2
+                        pb.PartialProgressValue = 1
+                        pb.PartialProgressText = "Working on List 2 Cell ID"
+                        For i As Integer = 0 To lb2SS.Items.Count - 1
+                            Dim aidText As String = lb2CID.Items(i).ToString
+                            .Range(IDstart & i + 2).Value = aidText
+                            pb.PartialProgressValue = partialIncrement * (i / 2 + 1)
+                        Next
+                    End With
+                End If
+
+                'UMTS Low Band Start
+                If chkLv3.Checked = True Then
+                    xlWS = xlWb.Worksheets(cboSheetlist3.Text)
+                    With xlWS
+
+                        pb.OverallProgressValue = pb.OverallProgressValue + increment
+                        pb.PartialProgressValue = 1
+                        pb.PartialProgressText = "Working on List 3 Signal Strength"
+                        partialIncrement = 100 / Convert.ToDecimal(lb3SS.Items.Count)
+                        For i As Integer = 0 To lb3SS.Items.Count - 1
+                            Dim ussText As String = lb3SS.Items(i).ToString
+                            .Range(ssStart & i + 2).Value = ussText
+                            pb.PartialProgressValue = partialIncrement * (i + 1)
+                        Next
+
+                        pb.OverallProgressValue = pb.OverallProgressValue + increment
+                        pb.PartialProgressValue = 1
+                        pb.PartialProgressText = "Working on List 3 Signal Quality"
+                        For i As Integer = 0 To lb3SQ.Items.Count - 1
+                            Dim usqText As String = lb3SQ.Items(i).ToString
+                            .Range(cStart & i + 2).Value = usqText
+                            pb.PartialProgressValue = partialIncrement * (i + 1)
+                        Next
+
+                        pb.OverallProgressValue = pb.OverallProgressValue + increment
+                        pb.PartialProgressValue = 1
+                        pb.PartialProgressText = "Working on List 3 Cell ID"
+                        For i As Integer = 0 To lb3CID.Items.Count - 1
+                            Dim uscText As String = lb3CID.Items(i).ToString
+                            .Range(IDstart & i + 2).Value = uscText
+                            pb.PartialProgressValue = partialIncrement * (i + 1)
+                        Next
+
+                    End With
+                End If
+
+                ' List 3 
+                If chkLv4.Checked = True Then
+                    xlWS = xlWb.Worksheets(cboSheetlist4.Text)
+                    With xlWS
+
+                        pb.OverallProgressValue = pb.OverallProgressValue + increment
+                        pb.PartialProgressValue = 1
+                        pb.PartialProgressText = "Working on List 4 Signal Strength"
+                        partialIncrement = 100 / Convert.ToDecimal(lb4SS.Items.Count)
+                        For i As Integer = 0 To lb4SS.Items.Count - 1
+                            Dim uss2Text As String = lb4SS.Items(i).ToString
+                            .Range(ssStart & i + 2).Value = uss2Text
+                            pb.PartialProgressValue = partialIncrement * (i + 1)
+                        Next
+
+                        pb.OverallProgressValue = pb.OverallProgressValue + increment
+                        pb.PartialProgressValue = 1
+                        pb.PartialProgressText = "Working on List 4 Signal Quality"
+                        For i As Integer = 0 To lb4SQ.Items.Count - 1
+                            Dim usq2Text As String = lb4SQ.Items(i).ToString
+                            .Range(cStart & i + 2).Value = usq2Text
+                            pb.PartialProgressValue = partialIncrement * (i + 1)
+                        Next
+
+                        pb.OverallProgressValue = pb.OverallProgressValue + increment
+                        pb.PartialProgressValue = 1
+                        pb.PartialProgressText = "Working on List 4 Cell ID"
+                        For i As Integer = 0 To lb4CID.Items.Count - 1
+                            Dim usc2Text As String = lb4CID.Items(i).ToString
+                            .Range(IDstart & i + 2).Value = usc2Text
+                            pb.PartialProgressValue = partialIncrement * (i + 1)
+                        Next
+
+                    End With
+                End If
+
+
+                pb.PartialProgressText = "Saving and Closing Excel..."
+                pb.OverallProgressText = "Saving and Closing Excel..."
+
+
+                If Label4.Text.Contains("Template") Then
+                    Dim mbResult As Integer = MsgBox("Do you want to save as a new file?", MsgBoxStyle.YesNo)
+                    If mbResult = DialogResult.Yes Then
+
+                        Dim iValue As Object
+                        iValue = InputBox("Name this file." & vbNewLine & _
+                                          "It will be saved under the my documents folder" & vbNewLine & _
+                                          "If this is being saved from the template file you will need to load the workbook again" _
+                                          , "File Save Prompt", Label1.Text)
+                        If iValue = "" Then
+                            iValue = Label1.Text
+                        End If
+                        xlWb.Saved = True
+                        xlWb.SaveAs(iValue & "_Final.xlsx")
+                        xlWb.Close()
+                        xlApp.Quit()
+                        pb.OverallProgressValue = pb.OverallProgressValue + increment / 2
+                        '  pb.PartialProgressValue = partialIncrement * 2 + 1
+
+                        Dim docDir As String = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                        Label4.Text = ""
+                        Label4.Text = docDir & "\" & iValue & "_Final.xlsx"
+
+                    Else
+                        xlWb.Saved = True
+                        xlWb.Save()
+                        xlWb.Close()
+                        xlApp.Quit()
+                        pb.OverallProgressValue = pb.OverallProgressValue + increment / 2
+                        '  pb.PartialProgressValue = partialIncrement * 2 + 1
+                    End If
+                Else
+                    xlWb.Saved = True
+                    xlWb.Save()
+                    xlWb.Close()
+                    xlApp.Quit()
+                    pb.OverallProgressValue = pb.OverallProgressValue + increment / 2
+                End If
+
+                For Each P As Process In System.Diagnostics.Process.GetProcessesByName("EXCEL")
+                    P.Kill()
+                Next
+                pb.OverallProgressValue = 100
+            End If
+            lv2.Items.Clear()
+            lv1.Items.Clear()
+            lv3.Items.Clear()
+            lv4.Items.Clear()
+
+            lb1SS.Items.Clear()
+            lb1SQ.Items.Clear()
+            lb1CID.Items.Clear()
+            lb2SS.Items.Clear()
+            lb2SQ.Items.Clear()
+            lb2CID.Items.Clear()
+            lb3SS.Items.Clear()
+            lb3SQ.Items.Clear()
+            lb3CID.Items.Clear()
+            lb4SS.Items.Clear()
+            lb4SQ.Items.Clear()
+            lb4CID.Items.Clear()
+        Catch ex As Exception
+            MessageBox.Show("Something has gone wrong....you should let Josh know." & vbCrLf & ex.Message)
+
+        End Try
+
+
+    End Sub
+
+    Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click
+        Dim fd As OpenFileDialog = New OpenFileDialog()
+        Dim strFileName As String
+        Try
+            fd.Title = "Open File Dialog"
+            fd.InitialDirectory = "C:\"
+            fd.Filter = "Microsoft Excel Files| *.xlsx"
+            fd.FilterIndex = 2
+            fd.RestoreDirectory = True
+
+            If fd.ShowDialog() = DialogResult.OK Then
+                strFileName = fd.FileName
+                Label4.Text = strFileName
+                Label4.ForeColor = Color.Green
+            End If
+
+
+
+            xlApp = New Excel.Application
+            xlApp.Visible = False
+            xlWb = xlApp.Workbooks.Open(Label4.Text)
+
+            For Each xlWS In xlWb.Worksheets
+                cboSheetlist1.Items.Add(xlWS.Name)
+                cboSheetlist2.Items.Add(xlWS.Name)
+                cboSheetlist3.Items.Add(xlWS.Name)
+                cboSheetlist4.Items.Add(xlWS.Name)
+            Next
+            cboSheetlist1.SelectedIndex = 5
+            cboSheetlist2.SelectedIndex = 1
+            cboSheetlist3.SelectedIndex = 2
+            cboSheetlist4.SelectedIndex = 3
+
+
+            xlWb.Close()
+            xlApp.Quit()
+        Catch ex As Exception
+            MsgBox("Can't complete operation" & vbCrLf & ex.Message)
+        End Try
+    End Sub
+
+    Private Sub btnVzwSQ_Click(sender As Object, e As EventArgs) Handles btnVzwSQ.Click
+        If Label1.Text = "Load Access Database" Then
+            MsgBox("Load Your Access Database")
+        Else
+
+            lb1SQ.Items.Clear()
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=*******")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_RS_CINR FROM LTE_Dominant_data WHERE Dominant_Channel_EARFCN = 5230", Connection)
+            da.Fill(ds, "Dominant_RS_CINR") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_RS_CINR").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_RS_CINR").Rows.Item(Count)
+                lb1SQ.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+            ds.Clear()
+
+
+            Dim arr2 As String() = {}
+            For i As Integer = 0 To lb1SQ.Items.Count - 1
+                Dim lbText = lb1SQ.Items(i).ToString
+                arr2.Add(lbText)
+            Next
+            Array.Reverse(arr2)
+            lb1SQ.Items.Clear()
+            lb1SQ.Items.AddRange(arr2)
+        End If
+    End Sub
+
+    Private Sub btnAttSQ_Click(sender As Object, e As EventArgs) Handles btnAttSQ.Click
+
+        If Label1.Text = "Load Access Database" Then
+            MsgBox("Load Your Access Database")
+        Else
+
+            lb2SQ.Items.Clear()
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            lb2SQ.Items.Clear()
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_RS_CINR FROM LTE_Dominant_data WHERE Dominant_Channel_EARFCN = 5110", Connection)
+            da.Fill(ds, "Dominant_RS_CINR") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_RS_CINR").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_RS_CINR").Rows.Item(Count)
+                lb2SQ.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+
+            Dim arr2 As String() = {}
+            For i As Integer = 0 To lb2SQ.Items.Count - 1
+                Dim lbText = lb2SQ.Items(i).ToString
+                arr2.Add(lbText)
+            Next
+            Array.Reverse(arr2)
+            lb2SQ.Items.Clear()
+            lb2SQ.Items.AddRange(arr2)
+        End If
+    End Sub
+
+    Private Sub btnVzwSS_Click(sender As Object, e As EventArgs) Handles btnVzwSS.Click
+        If Label1.Text = "Load Access Database" Then
+            MsgBox("Load Your Access Database")
+        Else
+
+            lb1SS.Items.Clear()
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            'lb2SQ.Items.Clear()
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_RSRP FROM LTE_Dominant_data WHERE Dominant_Channel_EARFCN = 5230", Connection)
+            da.Fill(ds, "Dominant_RSRP") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_RSRP").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_RSRP").Rows.Item(Count)
+                lb1SS.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+
+            Dim arr2 As String() = {}
+            For i As Integer = 0 To lb1SS.Items.Count - 1
+                Dim lbText = lb1SS.Items(i).ToString
+                arr2.Add(lbText)
+            Next
+            Array.Reverse(arr2)
+            lb1SS.Items.Clear()
+            lb1SS.Items.AddRange(arr2)
+        End If
+
+    End Sub
+
+    Private Sub btnAttSS_Click(sender As Object, e As EventArgs) Handles btnAttSS.Click
+        If Label1.Text = "Load Access Database" Then
+            MsgBox("Load Your Access Database")
+        Else
+
+            lb2SS.Items.Clear()
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            lb2SS.Items.Clear()
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_RSRP FROM LTE_Dominant_data WHERE Dominant_Channel_EARFCN = 5110", Connection)
+            da.Fill(ds, "Dominant_RSRP") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_RSRP").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_RSRP").Rows.Item(Count)
+                lb2SS.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+
+            Dim arr2 As String() = {}
+            For i As Integer = 0 To lb2SS.Items.Count - 1
+                Dim lbText = lb2SS.Items(i).ToString
+                arr2.Add(lbText)
+            Next
+            Array.Reverse(arr2)
+            lb2SS.Items.Clear()
+            lb2SS.Items.AddRange(arr2)
+        End If
+
+    End Sub
+
+    Private Sub btnVzwCID_Click(sender As Object, e As EventArgs) Handles btnVzwCID.Click
+        If Label1.Text = "Load Access Database" Then
+            MsgBox("Load Your Access Database")
+        Else
+
+            lb1CID.Items.Clear()
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_Cell_Id FROM LTE_Dominant_data WHERE Dominant_Channel_EARFCN = 5230", Connection)
+            da.Fill(ds, "Dominant_Cell_Id") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_Cell_Id").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_Cell_Id").Rows.Item(Count)
+                lb1CID.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+            ds.Clear()
+
+
+            Dim arr As String() = {}
+            For i As Integer = 0 To lb1CID.Items.Count - 1
+                Dim lbText = lb1CID.Items(i).ToString
+                arr.Add(lbText)
+            Next
+            Array.Reverse(arr)
+            lb1CID.Items.Clear()
+            lb1CID.Items.AddRange(arr)
+        End If
+    End Sub
+
+    Private Sub btnAttCID_Click(sender As Object, e As EventArgs) Handles btnAttCID.Click
+        If Label1.Text = "Load Access Database" Then
+            MsgBox("Load Your Access Database")
+        Else
+
+            lb2CID.Items.Clear()
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_Cell_Id FROM LTE_Dominant_data WHERE Dominant_Channel_EARFCN = 5110", Connection)
+            da.Fill(ds, "Dominant_Cell_Id") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_Cell_Id").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_Cell_Id").Rows.Item(Count)
+                lb2CID.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+            ds.Clear()
+
+
+            Dim arr As String() = {}
+            For i As Integer = 0 To lb2SQ.Items.Count - 1
+                Dim lbText = lb2CID.Items(i).ToString
+                arr.Add(lbText)
+            Next
+            Array.Reverse(arr)
+            lb2CID.Items.Clear()
+            lb2CID.Items.AddRange(arr)
+        End If
+    End Sub
+
+    Private Sub btnDetails_Click(sender As Object, e As EventArgs) Handles btnDetails.Click
+        If btnDetails.Text = "Show Details" Then
+            btnDetails.Text = "Hide Details"
+            Me.Height = 940
+        Else
+            btnDetails.Text = "Show Details"
+            Me.Height = 735
+        End If
+
+    End Sub
+
+    Private Sub GroupBox4_Enter(sender As Object, e As EventArgs) Handles GroupBox4.Enter
+
+    End Sub
+
+    Private Sub btnUmtsSS_Click(sender As Object, e As EventArgs) Handles btnUmtsSS.Click
+        If Label1.Text = "Load Access Database" Then
+            MsgBox("Load Your Access Database")
+        Else
+
+            lb3SS.Items.Clear()
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            ' lbAttSS.Items.Clear()
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_PSC_RSCP FROM WCDMA_scan_data_summary WHERE ARFCN = 4380", Connection)
+            da.Fill(ds, "Dominant_PSC_RSCP") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_PSC_RSCP").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_PSC_RSCP").Rows.Item(Count)
+                lb3SS.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+
+            Dim arr2 As String() = {}
+            For i As Integer = 0 To lb3SS.Items.Count - 1
+                Dim lbText = lb3SS.Items(i).ToString
+                arr2.Add(lbText)
+            Next
+            Array.Reverse(arr2)
+            lb3SS.Items.Clear()
+            lb3SS.Items.AddRange(arr2)
+        End If
+    End Sub
+
+    Private Sub UmtsSQ_Click(sender As Object, e As EventArgs) Handles UmtsSQ.Click
+        If Label1.Text = "Load Access Database" Then
+            MsgBox("Load Your Access Database")
+        Else
+
+            lb3SQ.Items.Clear()
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            ' lbAttSS.Items.Clear()
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_PSC_EcIo FROM WCDMA_scan_data_summary WHERE ARFCN = 4380", Connection)
+            da.Fill(ds, "Dominant_PSC_EcIo") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_PSC_EcIo").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_PSC_EcIo").Rows.Item(Count)
+                lb3SQ.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+
+            Dim arr2 As String() = {}
+            For i As Integer = 0 To lb3SQ.Items.Count - 1
+                Dim lbText = lb3SQ.Items(i).ToString
+                arr2.Add(lbText)
+            Next
+            Array.Reverse(arr2)
+            lb3SQ.Items.Clear()
+            lb3SQ.Items.AddRange(arr2)
+        End If
+    End Sub
+
+    Private Sub UmtsCID_Click(sender As Object, e As EventArgs) Handles UmtsCID.Click
+        If Label1.Text = "Load Access Database" Then
+            MsgBox("Load Your Access Database")
+        Else
+
+            lb3CID.Items.Clear()
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            ' lbAttSS.Items.Clear()
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_PSC FROM WCDMA_scan_data_summary WHERE ARFCN = 4380", Connection)
+            da.Fill(ds, "Dominant_PSC") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_PSC").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_PSC").Rows.Item(Count)
+                lb3CID.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+
+            Dim arr2 As String() = {}
+            For i As Integer = 0 To lb3CID.Items.Count - 1
+                Dim lbText = lb3CID.Items(i).ToString
+                arr2.Add(lbText)
+            Next
+            Array.Reverse(arr2)
+            lb3CID.Items.Clear()
+            lb3CID.Items.AddRange(arr2)
+        End If
+    End Sub
+
+    Private Sub UmtsSS2_Click(sender As Object, e As EventArgs) Handles UmtsSS2.Click
+        If Label1.Text = "Load Access Database" Then
+            MsgBox("Load Your Access Database")
+        Else
+
+            lb4SS.Items.Clear()
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            ' lbAttSS.Items.Clear()
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_PSC_RSCP FROM WCDMA_scan_data_summary WHERE ARFCN = 9910", Connection)
+            da.Fill(ds, "Dominant_PSC_RSCP") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_PSC_RSCP").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_PSC_RSCP").Rows.Item(Count)
+                lb4SS.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+
+            Dim arr2 As String() = {}
+            For i As Integer = 0 To lb4SS.Items.Count - 1
+                Dim lbText = lb4SS.Items(i).ToString
+                arr2.Add(lbText)
+            Next
+            Array.Reverse(arr2)
+            lb4SS.Items.Clear()
+            lb4SS.Items.AddRange(arr2)
+        End If
+    End Sub
+
+    Private Sub UmtsSQ2_Click(sender As Object, e As EventArgs) Handles UmtsSQ2.Click
+        If Label1.Text = "Load Access Database" Then
+            MsgBox("Load Your Access Database")
+        Else
+
+            lb4SQ.Items.Clear()
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            ' lbAttSS.Items.Clear()
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_PSC_EcIo FROM WCDMA_scan_data_summary WHERE ARFCN = 9910", Connection)
+            da.Fill(ds, "Dominant_PSC_EcIo") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_PSC_EcIo").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_PSC_EcIo").Rows.Item(Count)
+                lb4SQ.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+
+            Dim arr2 As String() = {}
+            For i As Integer = 0 To lb4SQ.Items.Count - 1
+                Dim lbText = lb4SQ.Items(i).ToString
+                arr2.Add(lbText)
+            Next
+            Array.Reverse(arr2)
+            lb4SQ.Items.Clear()
+            lb4SQ.Items.AddRange(arr2)
+        End If
+    End Sub
+
+    Private Sub UmtsCID2_Click(sender As Object, e As EventArgs) Handles UmtsCID2.Click
+        If Label1.Text = "Load Access Database" Then
+            MsgBox("Load Your Access Database")
+        Else
+
+            lb4CID.Items.Clear()
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            ' lbAttSS.Items.Clear()
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_PSC FROM WCDMA_scan_data_summary WHERE ARFCN = 9910", Connection)
+            da.Fill(ds, "Dominant_PSC") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_PSC").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_PSC").Rows.Item(Count)
+                lb4CID.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+
+            Dim arr2 As String() = {}
+            For i As Integer = 0 To lb4CID.Items.Count - 1
+                Dim lbText = lb4CID.Items(i).ToString
+                arr2.Add(lbText)
+            Next
+            Array.Reverse(arr2)
+            lb4CID.Items.Clear()
+            lb4CID.Items.AddRange(arr2)
+        End If
+    End Sub
+
+    Private Sub btnGlobalSet_Click(sender As Object, e As EventArgs) Handles btnGlobalSet.Click
+        ComboBox3.SelectedIndex = cboGlobalFloor.SelectedIndex + 1
+        ComboBox4.SelectedIndex = cboGlobalFloor.SelectedIndex + 1
+        cboUMTS1Floor.SelectedIndex = cboGlobalFloor.SelectedIndex + 1
+        cboUmts2Floor.SelectedIndex = cboGlobalFloor.SelectedIndex + 1
+    End Sub
+
+    Private Sub btnKillExcel_Click(sender As Object, e As EventArgs) Handles btnKillExcel.Click
+        For Each P As Process In System.Diagnostics.Process.GetProcessesByName("EXCEL")
+            P.Kill()
+        Next
+    End Sub
+
+
+
+    Private Sub cmdDirectory_Click(sender As Object, e As EventArgs) Handles cmdDirectory.Click
+        Dim fbd As FolderBrowserDialog
+        fbd = New FolderBrowserDialog
+
+        fbd.Description = "Select the folder where the exported sweep files are located"
+        fbd.ShowDialog()
+
+        Dim folderpath As String
+        folderpath = fbd.SelectedPath
+        If folderpath <> "" Then
+            Dim directory As DirectoryInfo = New DirectoryInfo(folderpath)
+            ListBox1.Items.Clear()
+            For Each Fi In directory.GetFiles()
+                ListBox1.Items.Add(Fi)
+            Next
+            Label4.Text = folderpath
+        Else
+            MsgBox("You must select a folder to continue")
+        End If
+
+        DirSearch(folderpath)
+        Dim i As Integer
+        For i = 0 To ListBox1.Items.Count - 1
+            cboFileList.Items.Add(ListBox1.Items(i).ToString)
+        Next
+        lblFilePath.Text = Path.GetDirectoryName(folderpath)
+
+
+
+    End Sub
+
+    Sub DirSearch(ByVal sDir As String)
+        Dim d As String
+        Dim f As String
+
+        Try
+            For Each d In Directory.GetDirectories(sDir)
+                For Each f In Directory.GetFiles(d, "*.mdb")
+                    ListBox1.Items.Add(Replace(f, Label4.Text, ""))
+                Next
+                DirSearch(d)
+            Next
+        Catch excpt As System.Exception
+            Debug.WriteLine(excpt.Message)
+        End Try
+    End Sub
+
+    Private Sub LoadMDBToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles LoadMDBToolStripMenuItem.Click
+
+    End Sub
+
+    Private Sub LoadDirectoryToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles LoadDirectoryToolStripMenuItem.Click
+
+    End Sub
+
+    Private Sub btnSetFloor_Click(sender As Object, e As EventArgs) Handles btnSetFloor.Click
+
+    End Sub
+
+    Private Sub OpenExcelCounterToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles OpenExcelCounterToolStripMenuItem.Click
+        Counter.Show()
+
+    End Sub
+
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click
+        If Label1.Text = "Load Access Database" Then
+            MsgBox("Load Your Access Database")
+        Else
+
+            lb1SS.Items.Clear()
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            lb2SQ.Items.Clear()
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_RSRP FROM LTE_Dominant_data WHERE Dominant_Channel_EARFCN = 5230", Connection)
+            da.Fill(ds, "Dominant_RSRP") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_RSRP").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_RSRP").Rows.Item(Count)
+                lb1SS.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+
+            Dim arr2 As String() = {}
+            For i As Integer = 0 To lb1SS.Items.Count - 1
+                Dim lbText = lb1SS.Items(i).ToString
+                arr2.Add(lbText)
+            Next
+            Array.Reverse(arr2)
+            lb1SS.Items.Clear()
+            lb1SS.Items.AddRange(arr2)
+        End If
+    End Sub
+
+    Private Sub Label7_Click(sender As Object, e As EventArgs)
+
+    End Sub
+
+    Public Sub AccessCall(ByVal sender As Object, e As EventArgs)
+
+
+    End Sub
+
+    Private Sub cmdLteCall_Click(sender As Object, e As EventArgs) Handles cmdLteCall.Click
+        Try
+            Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+            Dim Command As New OleDb.OleDbCommand
+            Dim ds As New DataSet
+            Dim da As New OleDb.OleDbDataAdapter
+            Dim row As System.Data.DataRow
+            Dim Count As Integer
+            Connection.Open()  'open up a connection to the database
+            Command.Connection = Connection
+
+            lb2SQ.Items.Clear()
+            da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_Channel_EARFCN FROM LTE_Dominant_data", Connection)
+            da.Fill(ds, "Dominant_Channel_EARFCN") 'Fill the dataset, ds, with the above SELECT statement
+            Count = ds.Tables("Dominant_Channel_EARFCN").Rows.Count - 1
+
+            While Count > -1 'loop through for each row, add it to the datagridview
+                row = ds.Tables("Dominant_Channel_EARFCN").Rows.Item(Count)
+                lbLteChannel.Items.Add(row.Item(0).ToString)
+                DataGridView1.Rows.Add(row.Item(0))
+                Count = Count - 1
+            End While
+
+            Connection.Close()
+
+            Dim arr2 As String() = {}
+            For i As Integer = 0 To lbLteChannel.Items.Count - 1
+                Dim lbText = lbLteChannel.Items(i).ToString
+                arr2.Add(lbText)
+            Next
+            Array.Reverse(arr2)
+            lbLteChannel.Items.Clear()
+            lbLteChannel.Items.AddRange(arr2)
+
+
+            For i As Int16 = 0 To Me.lbLteChannel.Items.Count - 2
+                For j As Int16 = Me.lbLteChannel.Items.Count - 1 To i + 1 Step -1
+                    If Me.lbLteChannel.Items(i).ToString = Me.lbLteChannel.Items(j).ToString Then
+                        Me.lbLteChannel.Items.RemoveAt(j)
+                    End If
+                Next
+            Next
+        Catch ex As Exception
+            MsgBox("Can't complete operation" & vbCrLf & ex.Message)
+        End Try
+    End Sub
+
+
+    Private Sub cmdWcdmaCall_Click(sender As Object, e As EventArgs) Handles cmdWcdmaCall.Click
+        Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+        Dim Command As New OleDb.OleDbCommand
+        Dim ds As New DataSet
+        Dim da As New OleDb.OleDbDataAdapter
+        Dim row As System.Data.DataRow
+        Dim Count As Integer
+        Connection.Open()  'open up a connection to the database
+        Command.Connection = Connection
+
+        lb2SQ.Items.Clear()
+        da.SelectCommand = New OleDb.OleDbCommand("SELECT ARFCN FROM WCDMA_scan_data_summary", Connection)
+        da.Fill(ds, "ARFCN") 'Fill the dataset, ds, with the above SELECT statement
+        Count = ds.Tables("ARFCN").Rows.Count - 1
+
+        While Count > -1 'loop through for each row, add it to the datagridview
+            row = ds.Tables("ARFCN").Rows.Item(Count)
+            lbWcdmaChannel.Items.Add(row.Item(0).ToString)
+            DataGridView1.Rows.Add(row.Item(0))
+            Count = Count - 1
+        End While
+
+        Connection.Close()
+
+        Dim arr2 As String() = {}
+        For i As Integer = 0 To lbWcdmaChannel.Items.Count - 1
+            Dim lbText = lbWcdmaChannel.Items(i).ToString
+            arr2.Add(lbText)
+        Next
+        Array.Reverse(arr2)
+        lbWcdmaChannel.Items.Clear()
+        lbWcdmaChannel.Items.AddRange(arr2)
+
+
+        For i As Int16 = 0 To Me.lbWcdmaChannel.Items.Count - 2
+            For j As Int16 = Me.lbWcdmaChannel.Items.Count - 1 To i + 1 Step -1
+                If Me.lbWcdmaChannel.Items(i).ToString = Me.lbWcdmaChannel.Items(j).ToString Then
+                    Me.lbWcdmaChannel.Items.RemoveAt(j)
+                End If
+            Next
+        Next
+
+    End Sub
+
+    Private Sub cmdCdmaCall_Click(sender As Object, e As EventArgs) Handles cmdCdmaCall.Click
+        Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+        Dim Command As New OleDb.OleDbCommand
+        Dim ds As New DataSet
+        Dim da As New OleDb.OleDbDataAdapter
+        Dim row As System.Data.DataRow
+        Dim Count As Integer
+        Connection.Open()  'open up a connection to the database
+        Command.Connection = Connection
+
+        lb2SQ.Items.Clear()
+        da.SelectCommand = New OleDb.OleDbCommand("SELECT Frequency_channel FROM CDMA_scan_data_summary", Connection)
+        da.Fill(ds, "Frequency_channel") 'Fill the dataset, ds, with the above SELECT statement
+        Count = ds.Tables("Frequency_channel").Rows.Count - 1
+
+        While Count > -1 'loop through for each row, add it to the datagridview
+            row = ds.Tables("Frequency_channel").Rows.Item(Count)
+            lbCdmaChannel.Items.Add(row.Item(0).ToString)
+            DataGridView1.Rows.Add(row.Item(0))
+            Count = Count - 1
+        End While
+
+        Connection.Close()
+
+        Dim arr2 As String() = {}
+        For i As Integer = 0 To lbCdmaChannel.Items.Count - 1
+            Dim lbText = lbCdmaChannel.Items(i).ToString
+            arr2.Add(lbText)
+        Next
+        Array.Reverse(arr2)
+        lbCdmaChannel.Items.Clear()
+        lbCdmaChannel.Items.AddRange(arr2)
+
+
+        For i As Int16 = 0 To Me.lbCdmaChannel.Items.Count - 2
+            For j As Int16 = Me.lbCdmaChannel.Items.Count - 1 To i + 1 Step -1
+                If Me.lbCdmaChannel.Items(i).ToString = Me.lbCdmaChannel.Items(j).ToString Then
+                    Me.lbCdmaChannel.Items.RemoveAt(j)
+                End If
+            Next
+        Next
+    End Sub
+
+    Private Sub cmdGsmCall_Click(sender As Object, e As EventArgs) Handles cmdGsmCall.Click
+        Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+        Dim Command As New OleDb.OleDbCommand
+        Dim ds As New DataSet
+        Dim da As New OleDb.OleDbDataAdapter
+        Dim row As System.Data.DataRow
+        Dim Count As Integer
+        Connection.Open()  'open up a connection to the database
+        Command.Connection = Connection
+
+        lb2SQ.Items.Clear()
+        da.SelectCommand = New OleDb.OleDbCommand("SELECT Channel FROM GSM_channel_data", Connection)
+        da.Fill(ds, "Channel") 'Fill the dataset, ds, with the above SELECT statement
+        Count = ds.Tables("Channel").Rows.Count - 1
+
+        While Count > -1 'loop through for each row, add it to the datagridview
+            row = ds.Tables("Channel").Rows.Item(Count)
+            lbGsmChannel.Items.Add(row.Item(0).ToString)
+            DataGridView1.Rows.Add(row.Item(0))
+            Count = Count - 1
+        End While
+
+        Connection.Close()
+
+        Dim arr2 As String() = {}
+        For i As Integer = 0 To lbGsmChannel.Items.Count - 1
+            Dim lbText = lbGsmChannel.Items(i).ToString
+            arr2.Add(lbText)
+        Next
+        Array.Reverse(arr2)
+        lbGsmChannel.Items.Clear()
+        lbGsmChannel.Items.AddRange(arr2)
+
+
+        For i As Int16 = 0 To Me.lbGsmChannel.Items.Count - 2
+            For j As Int16 = Me.lbGsmChannel.Items.Count - 1 To i + 1 Step -1
+                If Me.lbGsmChannel.Items(i).ToString = Me.lbGsmChannel.Items(j).ToString Then
+                    Me.lbGsmChannel.Items.RemoveAt(j)
+                End If
+            Next
+        Next
+    End Sub
+
+    Private Sub lv1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles lv1.SelectedIndexChanged
+
+    End Sub
+
+    Private Sub cmdPullChannels_Click(sender As Object, e As EventArgs) Handles cmdPullChannels.Click
+        cmdLteCall_Click(Nothing, Nothing)
+        cmdWcdmaCall_Click(Nothing, Nothing)
+        cmdCdmaCall_Click(Nothing, Nothing)
+        cmdGsmCall_Click(Nothing, Nothing)
+
+        Dim LTEcount As Integer = lbLteChannel.Items.Count
+        Dim WCDMAcount As Integer = lbWcdmaChannel.Items.Count
+        Dim CDMAcount As Integer = lbCdmaChannel.Items.Count
+        Dim GSMcount As Integer = lbGsmChannel.Items.Count
+
+        Dim maxcount As Integer = 1
+
+        If LTEcount > maxcount Then
+            maxcount = LTEcount
+        End If
+        If WCDMAcount > maxcount Then
+            maxcount = WCDMAcount
+        End If
+        If CDMAcount > maxcount Then
+            maxcount = CDMAcount
+        End If
+        If GSMcount > maxcount Then
+            maxcount = GSMcount
+        End If
+
+        For x = 0 To lbLteChannel.Items.Count - 1
+            Dim itm As String = lbLteChannel.Items(x).ToString
+            cboLv1Channel.Items.Add(itm)
+            cboLv2Channel.Items.Add(itm)
+            cboLv3Channel.Items.Add(itm)
+            cboLv4Channel.Items.Add(itm)
+        Next
+
+        For x = 0 To lbWcdmaChannel.Items.Count - 1
+            Dim itm2 As String = lbWcdmaChannel.Items(x).ToString
+            cboLv1Channel.Items.Add(itm2)
+            cboLv2Channel.Items.Add(itm2)
+            cboLv3Channel.Items.Add(itm2)
+            cboLv4Channel.Items.Add(itm2)
+        Next
+
+        For x = 0 To lbCdmaChannel.Items.Count - 1
+            Dim itm3 As String = lbCdmaChannel.Items(x).ToString
+            cboLv1Channel.Items.Add(itm3)
+            cboLv2Channel.Items.Add(itm3)
+            cboLv3Channel.Items.Add(itm3)
+            cboLv4Channel.Items.Add(itm3)
+        Next
+
+        For x = 0 To lbGsmChannel.Items.Count - 1
+            Dim itm4 As String = lbGsmChannel.Items(x).ToString
+            cboLv1Channel.Items.Add(itm4)
+            cboLv2Channel.Items.Add(itm4)
+            cboLv3Channel.Items.Add(itm4)
+            cboLv4Channel.Items.Add(itm4)
+        Next
+
+        For a = LTEcount To maxcount
+            lbLteChannel.Items.Add("")
+        Next
+        For b = WCDMAcount To maxcount
+            lbWcdmaChannel.Items.Add("")
+        Next
+        For c = CDMAcount To maxcount
+            lbCdmaChannel.Items.Add("")
+        Next
+
+        For x = 0 To maxcount
+            Dim lvi As New ListViewItem
+            lvi.Text = lbLteChannel.Items(x).ToString
+            If lvi.Text = Nothing Then
+                lvi.Text = ""
+            End If
+            lvi.SubItems.Add("")
+            lvi.SubItems.Add("")
+            lvChannels.Items.Add(lvi)
+        Next
+
+        For x = 0 To maxcount
+            Dim lvi2 As New ListViewItem
+            lvi2.Text = lbWcdmaChannel.Items(x).ToString
+            If lvi2.Text = Nothing Then
+                lvi2.Text = ""
+            End If
+            lvChannels.Items(x).SubItems(1).Text = lvi2.Text
+        Next
+
+        For x = 0 To maxcount
+            Dim lvi3 As New ListViewItem
+            lvi3.Text = lbCdmaChannel.Items(x).ToString
+            If lvi3.Text = Nothing Then
+                lvi3.Text = ""
+            End If
+            lvChannels.Items(x).SubItems(2).Text = lvi3.Text
+        Next
+
+        
+    End Sub
+
+    Private Sub Label2_Click_1(sender As Object, e As EventArgs) Handles Label2.Click
+
+    End Sub
+
+    Private Sub lblLteCategory_Click(sender As Object, e As EventArgs) Handles lblLteCategory.Click
+
+    End Sub
+
+    Public Sub AccessDataPull(lbArgument As System.Windows.Forms.ListBox, category As String, record As String, channelCriteria As String, channelNum As String)
+        Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+        Dim Command As New OleDb.OleDbCommand
+        Dim ds As New DataSet
+        Dim da As New OleDb.OleDbDataAdapter
+        Dim row As System.Data.DataRow
+        Dim Count As Integer
+
+        Connection.Open()  'open up a connection to the database
+        Command.Connection = Connection
+
+        da.SelectCommand = New OleDb.OleDbCommand("SELECT " & record & " FROM " & category & " WHERE " & channelCriteria & " = " & channelNum & "", Connection)
+        'SELECT  - Dominant_RSRP  - FROM - LTE_Dominant_data - WHERE - Dominant_Channel_EARFCN -  = - 5230"
+        'SELECT Dominant_PSC_RSCP FROM WCDMA_scan_data_summary WHERE ARFCN = 662
+        da.Fill(ds, Chr(34) & record & Chr(34)) 'Fill the dataset, ds, with the above SELECT statement
+        'da.Fill(ds, "Dominant_RSRP")
+        Count = ds.Tables(Chr(34) & record & Chr(34)).Rows.Count - 1
+
+        While Count > -1 'loop through for each row, add it to the datagridview
+            row = ds.Tables(Chr(34) & record & Chr(34)).Rows.Item(Count)
+            lbArgument.Items.Add(row.Item(0).ToString)
+            DataGridView1.Rows.Add(row.Item(0))
+            Count = Count - 1
+        End While
+
+        Connection.Close()
+
+        Dim arr2 As String() = {}
+        For i As Integer = 0 To lbArgument.Items.Count - 1
+            Dim lbText = lbArgument.Items(i).ToString
+            arr2.Add(lbText)
+        Next
+        Array.Reverse(arr2)
+        lbArgument.Items.Clear()
+        lbArgument.Items.AddRange(arr2)
+
+    End Sub
+
+    Private Sub cmdLv1_Click(sender As Object, e As EventArgs) Handles cmdLv1.Click
+        lv1.Items.Clear()
+        lb1SS.Items.Clear()
+        lb1SQ.Items.Clear()
+        lb1CID.Items.Clear()
+
+        Dim tech As String
+        Dim techFolder As String = ""
+        Dim SSpath As String = ""
+        Dim SQpath As String = ""
+        Dim CIDpath As String = ""
+        Dim channelArg As String = ""
+        Dim channel = cboLv1Channel.Text
+
+        lblSS1count.Text = ""
+        lblSQ1count.Text = ""
+        lblCID1count.Text = ""
+
+        Select Case cboTechLv1.Text
+            Case "LTE"
+                tech = "LTE"
+                techFolder = lblLteCategory.Text
+                SSpath = lblLteSS.Text
+                SQpath = lblLteSQ.Text
+                CIDpath = lblLteCID.Text
+                channelArg = lblLTEChannel.Text
+            Case "WCDMA"
+                tech = "WCDMA"
+                techFolder = lblWCDMACategory.Text
+                SSpath = lblWCDMASS.Text
+                SQpath = lblWCDMASQ.Text
+                CIDpath = lblWCDMACID.Text
+                channelArg = lblWCDMAChannel.Text
+            Case "CDMA"
+                tech = "CDMA"
+                techFolder = lblCDMACategory.Text
+                SSpath = lblCDMASS.Text
+                SQpath = lblCDMASQ.Text
+                CIDpath = lblCDMACID.Text
+                channelArg = lblCDMAChannel.Text
+            Case "GSM"
+                tech = "GSM"
+                techFolder = lblLteCategory.Text
+                SSpath = lblLteSS.Text
+                SQpath = lblLteSQ.Text
+                CIDpath = lblLteCID.Text
+        End Select
+
+        ' MsgBox(techFolder & " - " & SSpath & " - " & SQpath & " - " & CIDpath & " - " & channel)
+        'MsgBox("SELECT " & SSpath & " FROM " & techFolder & " WHERE " & channelArg & " = " & channel & "")
+        ' MsgBox(Chr(34) & SSpath & Chr(34))
+
+        Try
+
+
+            AccessDataPull(lb1SS, techFolder, SSpath, channelArg, channel)
+            AccessDataPull(lb1SQ, techFolder, SQpath, channelArg, channel)
+            AccessDataPull(lb1CID, techFolder, CIDpath, channelArg, channel)
+
+            For x As Integer = 0 To lb1SS.Items.Count - 1
+                Dim lvi As New ListViewItem
+                lvi.Text = lb1SS.Items(x).ToString
+                lvi.SubItems.Add(lb1SQ.Items(x).ToString)
+                lvi.SubItems.Add(lb1CID.Items(x).ToString)
+                lv1.Items.Add(lvi)
+            Next
+            lv1.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent)
+
+            lblSS1count.Text = lb1SS.Items.Count
+            lblSQ1count.Text = lb1SQ.Items.Count
+            lblCID1count.Text = lb1CID.Items.Count
+
+
+        Catch ex As Exception
+            MsgBox("Can't complete operation" & vbCrLf & ex.Message)
+        End Try
+
+    End Sub
+
+    Private Sub cmdLv2_Click(sender As Object, e As EventArgs) Handles cmdLv2.Click
+        lv2.Items.Clear()
+        lb2SS.Items.Clear()
+        lb2SQ.Items.Clear()
+        lb2CID.Items.Clear()
+
+        Dim tech As String
+        Dim techFolder As String = ""
+        Dim SSpath As String = ""
+        Dim SQpath As String = ""
+        Dim CIDpath As String = ""
+        Dim channelArg As String = ""
+        Dim channel = cboLv2Channel.Text
+
+        lblSS2count.Text = ""
+        lblSQ2count.Text = ""
+        lblCID2count.Text = ""
+
+
+        Select Case cboTechLv2.Text
+            Case "LTE"
+                tech = "LTE"
+                techFolder = lblLteCategory.Text
+                SSpath = lblLteSS.Text
+                SQpath = lblLteSQ.Text
+                CIDpath = lblLteCID.Text
+                channelArg = lblLTEChannel.Text
+            Case "WCDMA"
+                tech = "WCDMA"
+                techFolder = lblWCDMACategory.Text
+                SSpath = lblWCDMASS.Text
+                SQpath = lblWCDMASQ.Text
+                CIDpath = lblWCDMACID.Text
+                channelArg = lblWCDMAChannel.Text
+            Case "CDMA"
+                tech = "CDMA"
+                techFolder = lblCDMACategory.Text
+                SSpath = lblCDMASS.Text
+                SQpath = lblCDMASQ.Text
+                CIDpath = lblCDMACID.Text
+                channelArg = lblCDMAChannel.Text
+            Case "GSM"
+                tech = "GSM"
+                techFolder = lblLteCategory.Text
+                SSpath = lblLteSS.Text
+                SQpath = lblLteSQ.Text
+                CIDpath = lblLteCID.Text
+        End Select
+
+        ' MsgBox(techFolder & " - " & SSpath & " - " & SQpath & " - " & CIDpath & " - " & channel)
+        ' MsgBox("SELECT " & SSpath & " FROM " & techFolder & " WHERE " & channelArg & " = " & channel & "")
+        ' MsgBox(Chr(34) & SSpath & Chr(34))
+        Try
+
+
+            AccessDataPull(lb2SS, techFolder, SSpath, channelArg, channel)
+            AccessDataPull(lb2SQ, techFolder, SQpath, channelArg, channel)
+            AccessDataPull(lb2CID, techFolder, CIDpath, channelArg, channel)
+
+            For x As Integer = 0 To lb2SS.Items.Count - 1
+                Dim lvi As New ListViewItem
+                lvi.Text = lb2SS.Items(x).ToString
+                lvi.SubItems.Add(lb2SQ.Items(x).ToString)
+                lvi.SubItems.Add(lb2CID.Items(x).ToString)
+                lv2.Items.Add(lvi)
+            Next
+            lv2.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent)
+
+            lblSS2count.Text = lb2SS.Items.Count
+            lblSQ2count.Text = lb2SQ.Items.Count
+            lblCID2count.Text = lb2CID.Items.Count
+
+        Catch ex As Exception
+            MsgBox("Can't complete operation" & vbCrLf & ex.Message)
+        End Try
+
+    End Sub
+
+    Private Sub cmdLv3_Click(sender As Object, e As EventArgs) Handles cmdLv3.Click
+        lv3.Items.Clear()
+        lb3SS.Items.Clear()
+        lb3SQ.Items.Clear()
+        lb3CID.Items.Clear()
+
+        Dim tech As String
+        Dim techFolder As String = ""
+        Dim SSpath As String = ""
+        Dim SQpath As String = ""
+        Dim CIDpath As String = ""
+        Dim channelArg As String = ""
+        Dim channel = cboLv3Channel.Text
+
+        lblSS3count.Text = ""
+        lblSQ3count.Text = ""
+        lblCID3count.Text = ""
+
+        Select Case cboTechLv3.Text
+                Case "LTE"
+                    tech = "LTE"
+                    techFolder = lblLteCategory.Text
+                    SSpath = lblLteSS.Text
+                    SQpath = lblLteSQ.Text
+                    CIDpath = lblLteCID.Text
+                    channelArg = lblLTEChannel.Text
+                Case "WCDMA"
+                    tech = "WCDMA"
+                    techFolder = lblWCDMACategory.Text
+                    SSpath = lblWCDMASS.Text
+                    SQpath = lblWCDMASQ.Text
+                    CIDpath = lblWCDMACID.Text
+                    channelArg = lblWCDMAChannel.Text
+                Case "CDMA"
+                    tech = "CDMA"
+                    techFolder = lblLteCategory.Text
+                    SSpath = lblLteSS.Text
+                    SQpath = lblLteSQ.Text
+                    CIDpath = lblLteCID.Text
+                Case "GSM"
+                    tech = "GSM"
+                    techFolder = lblLteCategory.Text
+                    SSpath = lblLteSS.Text
+                    SQpath = lblLteSQ.Text
+                    CIDpath = lblLteCID.Text
+            End Select
+
+        ' MsgBox(techFolder & " - " & SSpath & " - " & SQpath & " - " & CIDpath & " - " & channel)
+        ' MsgBox("SELECT " & SSpath & " FROM " & techFolder & " WHERE " & channelArg & " = " & channel & "")
+        ' MsgBox(Chr(34) & SSpath & Chr(34))
+            Try
+
+                AccessDataPull(lb3SS, techFolder, SSpath, channelArg, channel)
+                AccessDataPull(lb3SQ, techFolder, SQpath, channelArg, channel)
+                AccessDataPull(lb3CID, techFolder, CIDpath, channelArg, channel)
+
+                For x As Integer = 0 To lb3SS.Items.Count - 1
+                    Dim lvi As New ListViewItem
+                    lvi.Text = lb3SS.Items(x).ToString
+                    lvi.SubItems.Add(lb3SQ.Items(x).ToString)
+                    lvi.SubItems.Add(lb3CID.Items(x).ToString)
+                    lv3.Items.Add(lvi)
+                Next
+                lv3.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent)
+
+            lblSS3count.Text = lb3SS.Items.Count
+                lblSQ3count.Text = lb3SQ.Items.Count
+                lblCID3count.Text = lb3CID.Items.Count
+
+            Catch ex As Exception
+                MsgBox("Can't complete operation" & vbCrLf & ex.Message)
+            End Try
+
+    End Sub
+
+    Private Sub cmdLv4_Click(sender As Object, e As EventArgs) Handles cmdLv4.Click
+        lv4.Items.Clear()
+        lb4SS.Items.Clear()
+        lb4SQ.Items.Clear()
+        lb4CID.Items.Clear()
+
+        Dim tech As String
+        Dim techFolder As String = ""
+        Dim SSpath As String = ""
+        Dim SQpath As String = ""
+        Dim CIDpath As String = ""
+        Dim channelArg As String = ""
+        Dim channel = cboLv4Channel.Text
+
+        lblSS4count.Text = ""
+        lblSQ4count.Text = ""
+        lblCID4count.Text = ""
+
+        Select Case cbotechLv4.Text
+            Case "LTE"
+                tech = "LTE"
+                techFolder = lblLteCategory.Text
+                SSpath = lblLteSS.Text
+                SQpath = lblLteSQ.Text
+                CIDpath = lblLteCID.Text
+                channelArg = lblLTEChannel.Text
+            Case "WCDMA"
+                tech = "WCDMA"
+                techFolder = lblWCDMACategory.Text
+                SSpath = lblWCDMASS.Text
+                SQpath = lblWCDMASQ.Text
+                CIDpath = lblWCDMACID.Text
+                channelArg = lblWCDMAChannel.Text
+            Case "CDMA"
+                tech = "CDMA"
+                techFolder = lblCDMACategory.Text
+                SSpath = lblCDMASS.Text
+                SQpath = lblCDMASQ.Text
+                CIDpath = lblCDMACID.Text
+                channelArg = lblCDMAChannel.Text
+            Case "GSM"
+                tech = "GSM"
+                techFolder = lblCDMACategory.Text
+                SSpath = lblCDMASS.Text
+                SQpath = lblCDMASQ.Text
+                CIDpath = lblLteCID.Text
+        End Select
+
+        ' MsgBox(techFolder & " - " & SSpath & " - " & SQpath & " - " & CIDpath & " - " & channel)
+        ' MsgBox("SELECT " & SSpath & " FROM " & techFolder & " WHERE " & channelArg & " = " & channel & "")
+        ' MsgBox(Chr(34) & SSpath & Chr(34))
+        Try
+
+            AccessDataPull(lb4SS, techFolder, SSpath, channelArg, channel)
+            AccessDataPull(lb4SQ, techFolder, SQpath, channelArg, channel)
+            AccessDataPull(lb4CID, techFolder, CIDpath, channelArg, channel)
+
+            For x As Integer = 0 To lb4SS.Items.Count - 1
+                Dim lvi As New ListViewItem
+                lvi.Text = lb4SS.Items(x).ToString
+                lvi.SubItems.Add(lb4SQ.Items(x).ToString)
+                lvi.SubItems.Add(lb4CID.Items(x).ToString)
+                lv4.Items.Add(lvi)
+            Next
+            lv4.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent)
+
+            lblSS4count.Text = lb4SS.Items.Count
+            lblSQ4count.Text = lb4SQ.Items.Count
+            lblCID4count.Text = lb4CID.Items.Count
+
+        Catch ex As Exception
+            MsgBox("Can't complete operation" & vbCrLf & ex.Message)
+        End Try
+
+    End Sub
+
+    Private Sub cmdLvPopulate_Click(sender As Object, e As EventArgs) Handles cmdLvPopulate.Click
+
+        For i As Integer = 0 To ListBox1.Items.Count - 1
+            If ListBox1.GetItemCheckState(i) = CheckState.Checked Then
+                Label1.Text = lblFilePath.Text + "\" + ListBox1.Items(i).ToString
+                If chkLv1.Checked = True Then
+                    cmdLv1_Click(Nothing, Nothing)
+                    cmdLv1Validate_Click(Nothing, Nothing)
+                End If
+
+                If chkLv2.Checked = True Then
+                    cmdLv2_Click(Nothing, Nothing)
+                    cmdLv2Validate_Click(Nothing, Nothing)
+                End If
+
+                If chkLv3.Checked = True Then
+                    cmdLv3_Click(Nothing, Nothing)
+                    cmdLv3Validate_Click(Nothing, Nothing)
+                End If
+
+                If chkLv4.Checked = True Then
+                    cmdLv4_Click(Nothing, Nothing)
+                    cmdLv4Validate_Click(Nothing, Nothing)
+                End If
+            End If
+        Next
+
+
+        
+    End Sub
+
+    Private Sub cmdLv1Validate_Click(sender As Object, e As EventArgs) Handles cmdLv1Validate.Click
+        Dim totalCount As Integer = lb1SS.Items.Count
+        Dim increment As Integer = 0
+        Dim totalPass As decimal = 0
+        Dim SSvalidate As Integer = 0
+        Dim Sqvalidate As Integer = 0
+        Dim ssPass As Boolean = False
+        Dim sqPass As Boolean = False
+        Dim fullPass As Boolean = False
+        Try
+
+
+            Select Case cboTechLv1.Text
+                Case "LTE"
+                    SSvalidate = -114
+                    Sqvalidate = 0
+                    For x = 0 To lb1SS.Items.Count - 1
+                        Dim SSitm As String
+                        Dim SQitm As String
+                        SSitm = lb1SS.Items(x).ToString
+                        SQitm = lb1SQ.Items(x).ToString
+                        If SSitm > SSvalidate Then ssPass = True
+                        If SQitm > Sqvalidate Then sqPass = True
+                        If ssPass And sqPass = True Then fullPass = True
+                        'lbConsole1.Items.Add("SS is " & SSitm & " - SQ is " & SQitm)
+                        If SSitm > SSvalidate Then
+                            '  If SQitm > Sqvalidate Then
+                            increment = increment + 1
+                            ' End If
+                        End If
+                    Next
+                Case "WCDMA"
+                    SSvalidate = -95
+                    Sqvalidate = 0
+                    For x = 0 To lb1SS.Items.Count - 1
+                        Dim SSitm As String
+                        Dim SQitm As String
+                        SSitm = lb1SS.Items(x).ToString
+                        SQitm = lb1SQ.Items(x).ToString
+                        If SSitm > SSvalidate Then
+                            increment = increment + 1
+                        End If
+                    Next
+                Case "CDMA"
+                    SSvalidate = -95
+                    Sqvalidate = 0
+                    For x = 0 To lb1SS.Items.Count - 1
+                        Dim SSitm As String
+                        Dim SQitm As String
+                        SSitm = lb1SS.Items(x).ToString
+                        SQitm = lb1SQ.Items(x).ToString
+                        If SSitm > SSvalidate Then
+                            increment = increment + 1
+                        End If
+                    Next
+            End Select
+
+            totalPass = increment / totalCount
+            txtLv1.Text = FormatPercent(totalPass, 0)
+            lbValidate1.Items.Add(FormatPercent(totalPass, 0))
+
+        Catch ex As Exception
+            MsgBox("Can't complete operation" & vbCrLf & ex.Message)
+        End Try
+
+    End Sub
+
+    Private Sub cmdLv2Validate_Click(sender As Object, e As EventArgs) Handles cmdLv2Validate.Click
+        Dim totalCount As Integer = lb2SS.Items.Count
+        Dim increment As Integer = 0
+        Dim totalPass As Decimal = 0
+        Dim SSvalidate As Integer = 0
+        Dim Sqvalidate As Integer = 0
+        Try
+
+        Select Case cboTechLv2.Text
+            Case "LTE"
+                    SSvalidate = -114
+                Sqvalidate = 0
+                For x = 0 To lb2SS.Items.Count - 1
+                    Dim SSitm As String
+                    Dim SQitm As String
+                    SSitm = lb2SS.Items(x).ToString
+                    SQitm = lb2SQ.Items(x).ToString
+                    If SSitm > SSvalidate Then
+                            '    If SQitm > Sqvalidate Then
+                            increment = increment + 1
+                            ' End If
+                        End If
+                    Next
+            Case "WCDMA"
+                    SSvalidate = -95
+                Sqvalidate = 0
+                For x = 0 To lb2SS.Items.Count - 1
+                    Dim SSitm As String
+                    Dim SQitm As String
+                    SSitm = lb2SS.Items(x).ToString
+                    SQitm = lb2SQ.Items(x).ToString
+                    If SSitm > SSvalidate Then
+                        increment = increment + 1
+                    End If
+                    Next
+                Case "CDMA"
+                    SSvalidate = -95
+                    Sqvalidate = 0
+                    For x = 0 To lb2SS.Items.Count - 1
+                        Dim SSitm As String
+                        Dim SQitm As String
+                        SSitm = lb2SS.Items(x).ToString
+                        SQitm = lb2SQ.Items(x).ToString
+                        If SSitm > SSvalidate Then
+                            increment = increment + 1
+                        End If
+                    Next
+            End Select
+        totalPass = increment / totalCount
+            txtLv2.Text = FormatPercent(totalPass, 0)
+            lbValidate2.Items.Add(FormatPercent(totalPass, 0))
+        Catch ex As Exception
+            MsgBox("Can't complete operation" & vbCrLf & ex.Message)
+        End Try
+    End Sub
+
+    Private Sub cmdLv3Validate_Click(sender As Object, e As EventArgs) Handles cmdLv3Validate.Click
+        Dim totalCount As Integer = lb3SS.Items.Count
+        Dim increment As Integer = 0
+        Dim totalPass As Decimal = 0
+        Dim SSvalidate As Integer = 0
+        Dim Sqvalidate As Integer = 0
+        Try
+
+        
+        Select Case cboTechLv3.Text
+            Case "LTE"
+                    SSvalidate = -114
+                Sqvalidate = 0
+                For x = 0 To lb3SS.Items.Count - 1
+                    Dim SSitm As String
+                    Dim SQitm As String
+                    SSitm = lb3SS.Items(x).ToString
+                    SQitm = lb3SQ.Items(x).ToString
+                    If SSitm > SSvalidate Then
+                            '  If SQitm > Sqvalidate Then
+                            increment = increment + 1
+                            '  End If
+                    End If
+                    Next
+            Case "WCDMA"
+                    SSvalidate = -95
+                Sqvalidate = 0
+                For x = 0 To lb3SS.Items.Count - 1
+                    Dim SSitm As String
+                    Dim SQitm As String
+                    SSitm = lb3SS.Items(x).ToString
+                    SQitm = lb3SQ.Items(x).ToString
+                    If SSitm > SSvalidate Then
+                        increment = increment + 1
+                    End If
+                Next
+        End Select
+
+        totalPass = increment / totalCount
+            txtLv3.Text = FormatPercent(totalPass, 0)
+            lbValidate3.Items.Add(FormatPercent(totalPass, 0))
+        Catch ex As Exception
+            MsgBox("Can't complete operation" & vbCrLf & ex.Message)
+        End Try
+    End Sub
+
+    Private Sub cmdLv4Validate_Click(sender As Object, e As EventArgs) Handles cmdLv4Validate.Click
+        Dim totalCount As Integer = lb4SS.Items.Count
+        Dim increment As Integer = 0
+        Dim totalPass As Decimal = 0
+        Dim SSvalidate As Integer = 0
+        Dim Sqvalidate As Integer = 0
+        Try
+
+        Select Case cbotechLv4.Text
+            Case "LTE"
+                SSvalidate = -115
+                Sqvalidate = 0
+                For x = 0 To lb4SS.Items.Count - 1
+                    Dim SSitm As String
+                    Dim SQitm As String
+                    SSitm = lb4SS.Items(x).ToString
+                    SQitm = lb4SQ.Items(x).ToString
+                    If SSitm > SSvalidate Then
+                        If SQitm > Sqvalidate Then
+                            increment = increment + 1
+                        End If
+                    End If
+                Next
+            Case "WCDMA"
+                    SSvalidate = -95
+                Sqvalidate = 0
+                For x = 0 To lb4SS.Items.Count - 1
+                    Dim SSitm As String
+                    Dim SQitm As String
+                    SSitm = lb4SS.Items(x).ToString
+                    SQitm = lb4SQ.Items(x).ToString
+                    If SSitm > SSvalidate Then
+                        increment = increment + 1
+                    End If
+                Next
+        End Select
+
+        totalPass = increment / totalCount
+            txtLv4.Text = FormatPercent(totalPass, 0)
+            lbValidate4.Items.Add(FormatPercent(totalPass, 0))
+        Catch ex As Exception
+            MsgBox("Can't complete operation" & vbCrLf & ex.Message)
+        End Try
+    End Sub
+
+    Private Sub cboFileList_SelectedIndexChanged(sender As Object, e As EventArgs)
+
+    End Sub
+
+    Private Sub btnAgg_Click(sender As Object, e As EventArgs) Handles btnAgg.Click
+
+    End Sub
+
+    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles Button6.Click
+        Dim Connection As OleDb.OleDbConnection = New OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & Label1.Text & ";Jet OLEDB:Database Password=Sh3rl0ck007!")
+        Dim Command As New OleDb.OleDbCommand
+        Dim ds As New DataSet
+        Dim da As New OleDb.OleDbDataAdapter
+        Dim row As System.Data.DataRow
+        Dim Count As Integer
+        Connection.Open()  'open up a connection to the database
+        Command.Connection = Connection
+
+        'lb2SQ.Items.Clear()
+        da.SelectCommand = New OleDb.OleDbCommand("SELECT Dominant_RSRP FROM LTE_Dominant_data WHERE Dominant_Channel_EARFCN = 5230", Connection)
+        da.Fill(ds, "Dominant_RSRP") 'Fill the dataset, ds, with the above SELECT statement
+        Count = ds.Tables("Dominant_RSRP").Rows.Count - 1
+
+        While Count > -1 'loop through for each row, add it to the datagridview
+            row = ds.Tables("Dominant_RSRP").Rows.Item(Count)
+            lb1SS.Items.Add(row.Item(0).ToString)
+            DataGridView1.Rows.Add(row.Item(0))
+            Count = Count - 1
+        End While
+
+        Connection.Close()
+    End Sub
+
+    Private Sub PictureBox1_Click(sender As Object, e As EventArgs) Handles Picture1.Click
+        Button2_Click_1(btnLoadFile, New System.EventArgs())
+    End Sub
+
+    Private Sub PictureBox2_Click(sender As Object, e As EventArgs) Handles PictureBox2.Click
+        cboSheetlist1.Items.Clear()
+        cboSheetlist2.Items.Clear()
+        cboSheetlist3.Items.Clear()
+        cboSheetlist4.Items.Clear()
+        Button4_Click(Button4, New System.EventArgs())
+    End Sub
+
+   
+End Class
